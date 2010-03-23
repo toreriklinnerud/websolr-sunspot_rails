@@ -7,15 +7,15 @@ if ENV["WEBSOLR_URL"]
   require "json"
   require "rest_client"
   require "uri"
-  
+
   api_key = ENV["WEBSOLR_URL"][/[0-9a-f]{11}/] or raise "Invalid WEBSOLR_URL: bad or no api key"
-  
+
   ENV["WEBSOLR_CONFIG_HOST"] ||= "www.websolr.com"
-  
+
   @pending = true
   Rails.logger.info "Checking index availability..."
 
-  response = RestClient.post("http://#{ENV["WEBSOLR_CONFIG_HOST"]}/schema/#{api_key}.json", :client => "sunspot-1.0")
+  response = RestClient.post("http://#{ENV["WEBSOLR_CONFIG_HOST"]}/schema/#{api_key}.json", :client => "sunspot-1.0").body
   json = JSON.parse(response)
   case json["status"]
   when "ok"
@@ -28,9 +28,9 @@ if ENV["WEBSOLR_URL"]
     Rails.logger.error json["message"]
     @pending = false
   else
-    Rails.logger.error "wtf: #{json.inspect}" 
+    Rails.logger.error "wtf: #{json.inspect}"
   end
-  
+
   module Sunspot #:nodoc:
     module Rails #:nodoc:
       class Configuration
@@ -46,10 +46,10 @@ if ENV["WEBSOLR_URL"]
       end
     end
   end
-  
+
   module Sunspot #:nodoc:
     module Rails #:nodoc:
-      # 
+      #
       # This module adds an after_filter to ActionController::Base that commits
       # the Sunspot session if any documents have been added, changed, or removed
       # in the course of the request.
@@ -61,10 +61,10 @@ if ENV["WEBSOLR_URL"]
               begin
                 # Sunspot moved the location of the commit_if_dirty method around.
                 # Let's support multiple versions for now.
-                session = Sunspot::Rails.respond_to?(:master_session) ? 
-                            Sunspot::Rails.master_session : 
+                session = Sunspot::Rails.respond_to?(:master_session) ?
+                            Sunspot::Rails.master_session :
                             Sunspot
-                            
+
                 if Sunspot::Rails.configuration.auto_commit_after_request?
                   session.commit_if_dirty
                 elsif Sunspot::Rails.configuration.auto_commit_after_delete_request?
@@ -81,10 +81,10 @@ if ENV["WEBSOLR_URL"]
       end
     end
   end
-  
+
   # This code makes saves go though even though solr is down.
   module Sunspot
-    module Rails 
+    module Rails
       module Searchable
         module InstanceMethods
           %w[solr_index solr_index! solr_remove_from_index solr_remove_from_index!].each do |method|
@@ -104,5 +104,5 @@ if ENV["WEBSOLR_URL"]
         end
       end
     end
-  end 
+  end
 end
